@@ -443,7 +443,7 @@ const styles = {
   root:{minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:C.fontBody,color:C.text,maxWidth:480,margin:"0 auto",position:"relative"},
   gradientBg:{position:"fixed",inset:0,background:C.gradient,zIndex:0},
   loading:{minHeight:"100vh",background:"#dcecd4",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12},
-  header:{background:C.headerBg,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",padding:"16px 0 0",textAlign:"center",position:"sticky",top:0,zIndex:10},
+  header:{background:C.headerBg,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",padding:"max(16px, env(safe-area-inset-top, 16px)) 0 0",textAlign:"center",position:"sticky",top:0,zIndex:10},
   headerInner:{display:"flex",alignItems:"center",justifyContent:"center",gap:14},
   headerTitle:{fontSize:22,letterSpacing:8,color:C.lightText,fontWeight:400,fontFamily:C.fontDisplay},
   headerSub:{fontSize:10,letterSpacing:4,color:C.lightDim,marginTop:3,textTransform:"uppercase"},
