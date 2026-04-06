@@ -302,16 +302,149 @@ function getStalkerCard(entries){const c={};entries.forEach(e=>{(e.slots||[]).fo
 function QuickBtn({icon,label,onClick,accent}){return<button onClick={onClick} style={styles.quickBtn}><span style={{fontSize:22,color:accent}}>{icon}</span><span style={{...styles.quickBtnLabel,color:accent}}>{label}</span></button>;}
 
 // ── Daily Pull ───────────────────────────────────────────────────────
-function DailyPull({onBack,entries,saveEntries}){const [card,setCard]=useState(null);const [note,setNote]=useState("");const [saved,setSaved]=useState(false);const [ap,setAp]=useState(false);const [ee,setEe]=useState(null);
+// ── Moon phase calculation ────────────────────────────────────────────
+function getMoon(){const d=new Date();const y=d.getFullYear();const m=d.getMonth()+1;const day=d.getDate();
+  let yr=y,mo=m;if(mo<=2){yr--;mo+=12;}
+  const A=Math.floor(yr/100);const B=2-A+Math.floor(A/4);
+  const JD=Math.floor(365.25*(yr+4716))+Math.floor(30.6001*(mo+1))+day+B-1524.5;
+  const refNew=2451550.1;const cyc=29.530588853;const age=(((JD-refNew)/cyc)%1+1)%1*cyc;
+  if(age<1.85)return{phase:"New Moon",icon:"🌑",msg:"Plant seeds in darkness. Set quiet intentions."};
+  if(age<5.55)return{phase:"Waxing Crescent",icon:"🌒",msg:"First stirrings of growth. Nurture what you've begun."};
+  if(age<9.25)return{phase:"First Quarter",icon:"🌓",msg:"Challenges clarify commitment. Push through."};
+  if(age<12.95)return{phase:"Waxing Gibbous",icon:"🌔",msg:"Momentum builds. Refine before fullness arrives."};
+  if(age<16.65)return{phase:"Full Moon",icon:"🌕",msg:"Illumination. What was hidden comes to light."};
+  if(age<20.35)return{phase:"Waning Gibbous",icon:"🌖",msg:"Gratitude and sharing. Distribute what you've harvested."};
+  if(age<24.05)return{phase:"Last Quarter",icon:"🌗",msg:"Release what no longer serves. Let go."};
+  if(age<27.75)return{phase:"Waning Crescent",icon:"🌘",msg:"Rest and surrender. The cycle nears completion."};
+  return{phase:"New Moon",icon:"🌑",msg:"Plant seeds in darkness. Set quiet intentions."};}
+
+function DailyPull({onBack,entries,saveEntries}){
+  const [card,setCard]=useState(null);
+  const [note,setNote]=useState("");
+  const [saved,setSaved]=useState(false);
+  const [ap,setAp]=useState(false);
+  const [ee,setEe]=useState(null);
+  const [revealing,setRevealing]=useState(false);
+  const [revealed,setRevealed]=useState(false);
+
   useEffect(()=>{const t=todayKey(),e=entries.find(x=>x.isDaily&&x.dateKey===t);if(e){setAp(true);setEe(e);}},[entries]);
-  const draw=()=>{setCard(ALL_CARDS[Math.floor(Math.random()*ALL_CARDS.length)]);setSaved(false);setNote("");};
+
+  // Inject breathing animation CSS
+  useEffect(()=>{
+    const id="arcana-breath-css";
+    if(document.getElementById(id))return;
+    const style=document.createElement("style");style.id=id;
+    style.textContent=`
+      @keyframes arcana-breathe {
+        0%,100% { transform:scale(0.85);opacity:0.25; }
+        50% { transform:scale(1.2);opacity:0.5; }
+      }
+      @keyframes arcana-fade-in {
+        0% { opacity:0;transform:scale(0.95) translateY(8px); }
+        100% { opacity:1;transform:scale(1) translateY(0); }
+      }
+    `;
+    document.head.appendChild(style);
+    return()=>{const el=document.getElementById(id);if(el)el.remove();};
+  },[]);
+
+  const draw=()=>{
+    const c=ALL_CARDS[Math.floor(Math.random()*ALL_CARDS.length)];
+    setCard(c);setRevealing(true);setRevealed(false);setSaved(false);setNote("");
+    setTimeout(()=>{setRevealing(false);setRevealed(true);},900);
+  };
+
   const save=()=>{saveEntries([{id:Date.now().toString(),isDaily:true,date:formatDate(),dateKey:todayKey(),card:card.name,note,spreadName:"Daily Pull",slots:[]},...entries]);setSaved(true);};
-  return(<div style={styles.section}><BackBtn onClick={onBack}/><h2 style={styles.pageTitle}>Daily Pull</h2>
-    {ap&&!card?<div><div style={styles.alreadyPulledBox}><div style={{fontSize:10,letterSpacing:3,color:C.textDim,textTransform:"uppercase",marginBottom:8}}>Today's Card</div><div style={{fontSize:21,letterSpacing:2,color:C.accent,marginBottom:6,fontFamily:C.fontDisplay}}>{ee?.card}</div><div style={{fontSize:11,color:C.textDim}}>pulled earlier today</div>{ee?.note&&<p style={{fontSize:13,color:C.textMid,fontStyle:"italic",lineHeight:1.7,marginTop:12}}>{ee.note}</p>}</div><button style={{...styles.btnSecondary,width:"100%",marginTop:14}} onClick={()=>{setAp(false);setEe(null);draw();}}>Draw another card anyway</button></div>
-    :!card?<div style={styles.drawArea}><div style={styles.cardBack} onClick={draw}><div style={{fontSize:44,color:C.accentDim}}>✦</div><div style={{fontSize:10,letterSpacing:3,color:C.textDim,textTransform:"uppercase"}}>Tap to draw</div></div></div>
-    :<div><div style={{...styles.drawnCard,borderColor:suitBorder(card),background:suitBg(card),position:"relative",overflow:"hidden"}}><div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:suitBar(card),borderRadius:"3px 0 0 3px"}}/><div style={{width:40,height:40,borderRadius:"50%",background:suitSymbolBg(card),display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}><span style={{color:suitColor(card),fontSize:22}}>{suitSymbol(card)}</span></div><div style={styles.drawnCardName}>{card.name}</div><div style={{fontSize:11,color:suitColor(card),letterSpacing:1.5,marginBottom:12,opacity:.7}}>{card.keywords.join(" · ")}</div><p style={styles.drawnCardMeaning}>{card.meaning}</p></div>
-      {!saved?<><textarea style={styles.textarea} placeholder="Your reflections…" value={note} onChange={e=>setNote(e.target.value)} rows={4}/><div style={styles.btnRow}><button style={styles.btnSecondary} onClick={draw}>Draw Again</button><button style={styles.btnPrimary} onClick={save}>Save to Journal</button></div></>:<div style={styles.savedBanner}>✦ Saved to your journal</div>}
-    </div>}</div>);}
+
+  const moon=getMoon();
+  const now=new Date();
+  const dayName=now.toLocaleDateString("en-US",{weekday:"long"});
+  const dateStr=now.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+
+  // Already pulled today
+  if(ap&&!card) return(
+    <div style={styles.section}>
+      <BackBtn onClick={onBack}/>
+      <h2 style={styles.pageTitle}>Daily Pull</h2>
+      <div style={styles.alreadyPulledBox}>
+        <div style={{fontSize:10,letterSpacing:3,color:C.textDim,textTransform:"uppercase",marginBottom:8}}>Today's Card</div>
+        <div style={{fontSize:21,letterSpacing:2,color:C.accent,marginBottom:6,fontFamily:C.fontDisplay}}>{ee?.card}</div>
+        <div style={{fontSize:11,color:C.textDim}}>pulled earlier today</div>
+        {ee?.note&&<p style={{fontSize:13,color:C.textMid,fontStyle:"italic",lineHeight:1.7,marginTop:12}}>{ee.note}</p>}
+      </div>
+      <button style={{...styles.btnSecondary,width:"100%",marginTop:14}} onClick={()=>{setAp(false);setEe(null);}}>Draw another card anyway</button>
+    </div>
+  );
+
+  // Pre-draw ritual screen
+  if(!card) return(
+    <div style={styles.section}>
+      <BackBtn onClick={onBack}/>
+      <div style={{textAlign:"center",paddingTop:16,position:"relative",minHeight:380,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+
+        {/* Breathing glow */}
+        <div style={{position:"absolute",top:"50%",left:"50%",width:280,height:280,marginLeft:-140,marginTop:-140,borderRadius:"50%",background:`radial-gradient(circle,${C.accent}18 0%,transparent 70%)`,animation:"arcana-breathe 8s ease-in-out infinite",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",top:"50%",left:"50%",width:180,height:180,marginLeft:-90,marginTop:-90,borderRadius:"50%",background:`radial-gradient(circle,${C.accent}10 0%,transparent 70%)`,animation:"arcana-breathe 8s ease-in-out infinite 0.5s",pointerEvents:"none"}}/>
+
+        {/* Date & day */}
+        <div style={{position:"relative",zIndex:1,marginBottom:8}}>
+          <div style={{fontSize:13,color:C.textDim,letterSpacing:3,textTransform:"uppercase"}}>{dayName}</div>
+          <div style={{fontSize:22,color:C.text,fontFamily:C.fontDisplay,letterSpacing:2,marginTop:4}}>{dateStr}</div>
+        </div>
+
+        {/* Moon phase */}
+        <div style={{position:"relative",zIndex:1,marginBottom:32}}>
+          <div style={{fontSize:28,marginBottom:4}}>{moon.icon}</div>
+          <div style={{fontSize:12,color:C.accent,letterSpacing:1.5,marginBottom:4}}>{moon.phase}</div>
+          <div style={{fontSize:12,color:C.textDim,fontStyle:"italic",maxWidth:240,lineHeight:1.5}}>{moon.msg}</div>
+        </div>
+
+        {/* Card back */}
+        <div style={{...styles.cardBack,position:"relative",zIndex:1}} onClick={draw}>
+          <div style={{fontSize:44,color:C.accentDim}}>✦</div>
+          <div style={{fontSize:10,letterSpacing:3,color:C.textDim,textTransform:"uppercase"}}>Tap to draw</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Revealing / revealed card
+  return(
+    <div style={styles.section}>
+      <BackBtn onClick={onBack}/>
+      <h2 style={styles.pageTitle}>Daily Pull</h2>
+
+      {/* Date & moon compact */}
+      <div style={{textAlign:"center",marginBottom:14}}>
+        <span style={{fontSize:11,color:C.textDim,letterSpacing:1}}>{dateStr}</span>
+        <span style={{margin:"0 8px",color:C.textDim}}>·</span>
+        <span style={{fontSize:14}}>{moon.icon}</span>
+        <span style={{fontSize:11,color:C.textDim,letterSpacing:1,marginLeft:4}}>{moon.phase}</span>
+      </div>
+
+      {/* Card with fade-in animation */}
+      <div style={{opacity:revealing?0:1,transform:revealing?"scale(0.95) translateY(8px)":"scale(1) translateY(0)",transition:"opacity 0.8s ease-out, transform 0.8s ease-out"}}>
+        <div style={{...styles.drawnCard,borderColor:suitBorder(card),background:suitBg(card),position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,background:suitBar(card),borderRadius:"3px 0 0 3px"}}/>
+          <div style={{width:40,height:40,borderRadius:"50%",background:suitSymbolBg(card),display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 8px"}}>
+            <span style={{color:suitColor(card),fontSize:22}}>{suitSymbol(card)}</span>
+          </div>
+          <div style={styles.drawnCardName}>{card.name}</div>
+          <div style={{fontSize:11,color:suitColor(card),letterSpacing:1.5,marginBottom:12,opacity:.7}}>{card.keywords.join(" · ")}</div>
+          <p style={styles.drawnCardMeaning}>{card.meaning}</p>
+        </div>
+
+        {!saved?<>
+          <textarea style={styles.textarea} placeholder="What does this card stir in you today?" value={note} onChange={e=>setNote(e.target.value)} rows={4}/>
+          <div style={styles.btnRow}>
+            <button style={styles.btnSecondary} onClick={()=>{setCard(null);setRevealed(false);setRevealing(false);}}>Draw Again</button>
+            <button style={styles.btnPrimary} onClick={save}>Save to Journal</button>
+          </div>
+        </>:<div style={styles.savedBanner}>✦ Saved to your journal</div>}
+      </div>
+    </div>
+  );
+}
 
 // ── New/Edit Entry + CardSelect (same structure as before) ───────────
 function NewEntry({spreads,onSave,onBack}){const [step,setStep]=useState("pick");const [spread,setSpread]=useState(null);const [slots,setSlots]=useState([]);const [question,setQuestion]=useState("");const [globalNote,setGlobalNote]=useState("");const [as,setAs]=useState(0);
