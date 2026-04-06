@@ -335,13 +335,44 @@ function DailyPull({onBack,entries,saveEntries}){
     if(document.getElementById(id))return;
     const style=document.createElement("style");style.id=id;
     style.textContent=`
-      @keyframes arcana-breathe {
-        0%,100% { transform:scale(0.85);opacity:0.25; }
-        50% { transform:scale(1.2);opacity:0.5; }
+      @keyframes arcana-ring {
+        0% { transform:scale(0.6);opacity:0.4; }
+        5% { opacity:0.6; }
+        40% { transform:scale(1);opacity:0.6; }
+        50% { transform:scale(1);opacity:0.5; }
+        55% { opacity:0.6; }
+        90% { transform:scale(0.6);opacity:0.4; }
+        100% { transform:scale(0.6);opacity:0.4; }
       }
-      @keyframes arcana-fade-in {
-        0% { opacity:0;transform:scale(0.95) translateY(8px); }
-        100% { opacity:1;transform:scale(1) translateY(0); }
+      @keyframes arcana-ring2 {
+        0% { transform:scale(0.65);opacity:0.2; }
+        40% { transform:scale(1.05);opacity:0.35; }
+        50% { transform:scale(1.05);opacity:0.3; }
+        90% { transform:scale(0.65);opacity:0.2; }
+        100% { transform:scale(0.65);opacity:0.2; }
+      }
+      @keyframes arcana-glow {
+        0% { opacity:0.08; }
+        40% { opacity:0.2; }
+        50% { opacity:0.18; }
+        90% { opacity:0.08; }
+        100% { opacity:0.08; }
+      }
+      @keyframes arcana-in {
+        0%,45% { opacity:1; }
+        50%,100% { opacity:0; }
+      }
+      @keyframes arcana-out {
+        0%,45% { opacity:0; }
+        50%,95% { opacity:1; }
+        100% { opacity:0; }
+      }
+      @keyframes arcana-card-breathe {
+        0% { transform:scale(0.97); }
+        40% { transform:scale(1.02); }
+        50% { transform:scale(1.02); }
+        90% { transform:scale(0.97); }
+        100% { transform:scale(0.97); }
       }
     `;
     document.head.appendChild(style);
@@ -380,30 +411,46 @@ function DailyPull({onBack,entries,saveEntries}){
   if(!card) return(
     <div style={styles.section}>
       <BackBtn onClick={onBack}/>
-      <div style={{textAlign:"center",paddingTop:16,position:"relative",minHeight:380,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-
-        {/* Breathing glow */}
-        <div style={{position:"absolute",top:"50%",left:"50%",width:280,height:280,marginLeft:-140,marginTop:-140,borderRadius:"50%",background:`radial-gradient(circle,${C.accent}18 0%,transparent 70%)`,animation:"arcana-breathe 8s ease-in-out infinite",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",top:"50%",left:"50%",width:180,height:180,marginLeft:-90,marginTop:-90,borderRadius:"50%",background:`radial-gradient(circle,${C.accent}10 0%,transparent 70%)`,animation:"arcana-breathe 8s ease-in-out infinite 0.5s",pointerEvents:"none"}}/>
+      <div style={{textAlign:"center",paddingTop:8}}>
 
         {/* Date & day */}
-        <div style={{position:"relative",zIndex:1,marginBottom:8}}>
+        <div style={{marginBottom:4}}>
           <div style={{fontSize:13,color:C.textDim,letterSpacing:3,textTransform:"uppercase"}}>{dayName}</div>
           <div style={{fontSize:22,color:C.text,fontFamily:C.fontDisplay,letterSpacing:2,marginTop:4}}>{dateStr}</div>
         </div>
 
         {/* Moon phase */}
-        <div style={{position:"relative",zIndex:1,marginBottom:32}}>
-          <div style={{fontSize:28,marginBottom:4}}>{moon.icon}</div>
-          <div style={{fontSize:12,color:C.accent,letterSpacing:1.5,marginBottom:4}}>{moon.phase}</div>
-          <div style={{fontSize:12,color:C.textDim,fontStyle:"italic",maxWidth:240,lineHeight:1.5}}>{moon.msg}</div>
+        <div style={{marginBottom:24}}>
+          <span style={{fontSize:20}}>{moon.icon}</span>
+          <span style={{fontSize:12,color:C.accent,letterSpacing:1.5,marginLeft:8}}>{moon.phase}</span>
+          <div style={{fontSize:12,color:C.textDim,fontStyle:"italic",maxWidth:260,margin:"6px auto 0",lineHeight:1.5}}>{moon.msg}</div>
         </div>
 
-        {/* Card back */}
-        <div style={{...styles.cardBack,position:"relative",zIndex:1}} onClick={draw}>
+        {/* Breathing guide */}
+        <div style={{position:"relative",width:220,height:220,margin:"0 auto 20px"}}>
+          {/* Outer ring */}
+          <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`2px solid ${C.accent}`,animation:"arcana-ring 10s ease-in-out infinite",pointerEvents:"none"}}/>
+          {/* Inner ring */}
+          <div style={{position:"absolute",inset:20,borderRadius:"50%",border:`1.5px solid ${C.accent}`,animation:"arcana-ring2 10s ease-in-out infinite",pointerEvents:"none"}}/>
+          {/* Radial glow fill */}
+          <div style={{position:"absolute",inset:10,borderRadius:"50%",background:`radial-gradient(circle,${C.accent}20 0%,transparent 70%)`,animation:"arcana-glow 10s ease-in-out infinite",pointerEvents:"none"}}/>
+
+          {/* Breath text cues */}
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+            <span style={{fontSize:13,letterSpacing:3,color:C.accent,textTransform:"uppercase",animation:"arcana-in 10s ease-in-out infinite"}}>breathe in</span>
+          </div>
+          <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+            <span style={{fontSize:13,letterSpacing:3,color:C.accent,textTransform:"uppercase",animation:"arcana-out 10s ease-in-out infinite"}}>breathe out</span>
+          </div>
+        </div>
+
+        {/* Card back — pulses gently with breath */}
+        <div style={{...styles.cardBack,position:"relative",margin:"0 auto",animation:"arcana-card-breathe 10s ease-in-out infinite"}} onClick={draw}>
           <div style={{fontSize:44,color:C.accentDim}}>✦</div>
           <div style={{fontSize:10,letterSpacing:3,color:C.textDim,textTransform:"uppercase"}}>Tap to draw</div>
         </div>
+
+        <div style={{fontSize:11,color:C.textDim,fontStyle:"italic",marginTop:16,opacity:0.6}}>take a moment before you draw</div>
       </div>
     </div>
   );
